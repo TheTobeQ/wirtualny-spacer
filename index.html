@@ -3,47 +3,44 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Wirtualny spacer – Apartament</title>
+  <title>Wirtualny spacer</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { width: 100%; height: 100%; overflow: hidden; background: #0a0a0a; font-family: system-ui, -apple-system, sans-serif; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: #0c0c0e; font-family: system-ui, -apple-system, sans-serif; }
     #canvas { display: block; width: 100%; height: 100%; touch-action: none; }
     #blocker {
-      position: absolute; inset: 0; background: rgba(0,0,0,0.72);
+      position: absolute; inset: 0; background: rgba(8,8,10,0.78);
       display: flex; flex-direction: column; align-items: center; justify-content: center;
       color: #fff; z-index: 10; cursor: pointer; text-align: center; padding: 24px;
     }
-    #blocker h1 { font-size: clamp(1.4rem, 4vw, 2.2rem); margin-bottom: 12px; font-weight: 600; }
-    #blocker p { opacity: 0.85; max-width: 420px; line-height: 1.5; font-size: 0.95rem; }
+    #blocker h1 { font-size: clamp(1.5rem, 4vw, 2.1rem); margin-bottom: 10px; font-weight: 600; letter-spacing: -0.02em; }
+    #blocker p { opacity: 0.8; max-width: 400px; line-height: 1.55; font-size: 0.95rem; }
     #blocker .btn {
-      margin-top: 28px; padding: 14px 32px; background: #fff; color: #111;
-      border: none; border-radius: 10px; font-size: 1.05rem; font-weight: 600; cursor: pointer;
+      margin-top: 26px; padding: 13px 30px; background: #f2f2f2; color: #111;
+      border: none; border-radius: 9px; font-size: 1rem; font-weight: 600; cursor: pointer;
     }
+    #blocker .btn:hover { background: #fff; }
     #hud {
-      position: absolute; left: 16px; bottom: 16px; color: rgba(255,255,255,0.7);
-      font-size: 12px; pointer-events: none; z-index: 5; line-height: 1.4;
+      position: absolute; left: 14px; bottom: 14px; color: rgba(255,255,255,0.55);
+      font-size: 11px; pointer-events: none; z-index: 5; line-height: 1.4;
     }
     #crosshair {
-      position: absolute; top: 50%; left: 50%; width: 18px; height: 18px;
-      margin: -9px 0 0 -9px; pointer-events: none; z-index: 4;
-      border: 1.5px solid rgba(255,255,255,0.55); border-radius: 50%;
-    }
-    #crosshair::after {
-      content: ''; position: absolute; top: 50%; left: 50%; width: 4px; height: 4px;
-      margin: -2px 0 0 -2px; background: rgba(255,255,255,0.8); border-radius: 50%;
+      position: absolute; top: 50%; left: 50%; width: 14px; height: 14px;
+      margin: -7px 0 0 -7px; pointer-events: none; z-index: 4;
+      border: 1.5px solid rgba(255,255,255,0.45); border-radius: 50%;
     }
     #joystick-zone {
-      position: absolute; left: 20px; bottom: 20px; width: 120px; height: 120px;
+      position: absolute; left: 18px; bottom: 18px; width: 110px; height: 110px;
       display: none; z-index: 6; touch-action: none;
     }
     #joystick-base {
       width: 100%; height: 100%; border-radius: 50%;
-      background: rgba(255,255,255,0.12); border: 2px solid rgba(255,255,255,0.25);
+      background: rgba(255,255,255,0.1); border: 1.5px solid rgba(255,255,255,0.22);
       position: relative;
     }
     #joystick-knob {
-      position: absolute; width: 48px; height: 48px; border-radius: 50%;
-      background: rgba(255,255,255,0.45); top: 50%; left: 50%;
+      position: absolute; width: 44px; height: 44px; border-radius: 50%;
+      background: rgba(255,255,255,0.4); top: 50%; left: 50%;
       transform: translate(-50%, -50%); touch-action: none;
     }
     #look-zone {
@@ -51,33 +48,32 @@
       display: none; z-index: 5; touch-action: none;
     }
     #loading {
-      position: absolute; inset: 0; background: #111; display: flex;
-      align-items: center; justify-content: center; color: #fff; z-index: 20;
-      flex-direction: column; gap: 16px;
+      position: absolute; inset: 0; background: #0c0c0e; display: flex;
+      align-items: center; justify-content: center; color: #eee; z-index: 20;
+      flex-direction: column; gap: 14px; font-size: 14px;
     }
     #loading .bar {
-      width: 200px; height: 4px; background: #333; border-radius: 2px; overflow: hidden;
+      width: 180px; height: 3px; background: #2a2a2e; border-radius: 2px; overflow: hidden;
     }
-    #loading .fill { height: 100%; width: 0%; background: #4af; transition: width 0.2s; }
+    #loading .fill { height: 100%; width: 0%; background: #7eb8ff; transition: width 0.15s; }
   </style>
 </head>
 <body>
   <div id="loading">
-    <div>Ładowanie modelu…</div>
+    <div>Ładowanie…</div>
     <div class="bar"><div class="fill" id="progress"></div></div>
   </div>
   <div id="blocker">
     <h1>Wirtualny spacer</h1>
     <p>
-      Kliknij, aby wejść w tryb spaceru.<br>
-      <strong>WASD</strong> – chodzenie &nbsp;|&nbsp; <strong>Mysz</strong> – rozglądanie<br>
-      <strong>Spacja</strong> – skok &nbsp;|&nbsp; <strong>Shift</strong> – bieg<br>
-      Na telefonie: joystick + przeciąganie palcem.
+      <strong>WASD</strong> – chodzenie &nbsp;·&nbsp; <strong>Mysz</strong> – rozglądanie<br>
+      <strong>Shift</strong> – bieg &nbsp;·&nbsp; <strong>Spacja</strong> – skok<br>
+      Telefon: joystick + przeciąganie
     </p>
-    <button class="btn" id="startBtn">Rozpocznij spacer</button>
+    <button class="btn" id="startBtn">Wejdź</button>
   </div>
   <div id="crosshair"></div>
-  <div id="hud">Układ zachowany z Twojego modelu · Eye-level</div>
+  <div id="hud">Wejście → kuchnia/salon (prawo) · łazienka · techniczne · sypialnia</div>
   <div id="joystick-zone"><div id="joystick-base"><div id="joystick-knob"></div></div></div>
   <div id="look-zone"></div>
   <canvas id="canvas"></canvas>
@@ -101,65 +97,58 @@
     const startBtn = document.getElementById('startBtn');
     const loading = document.getElementById('loading');
     const progressEl = document.getElementById('progress');
-    const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) ||
-                     ('ontouchstart' in window);
+    const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || ('ontouchstart' in window);
 
-    // ——— Renderer ———
     const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.4;
+    renderer.toneMappingExposure = 1.25;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x1a1a1e);
-    scene.fog = new THREE.FogExp2(0x1a1a1e, 0.012);
+    scene.background = new THREE.Color(0x12141a);
+    scene.fog = new THREE.FogExp2(0x12141a, 0.018);
 
-    // ——— Camera (eye height ~1.65 m) ———
-    const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.05, 80);
-    camera.position.set(-1.2, 1.55, 0.8);
+    const camera = new THREE.PerspectiveCamera(68, window.innerWidth / window.innerHeight, 0.05, 60);
+    camera.position.set(0.3, 1.6, 4.2);
 
-    // ——— Environment / lighting ———
     const pmrem = new THREE.PMREMGenerator(renderer);
-    scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+    scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.03).texture;
 
-    // Ambient + hemisphere
-    scene.add(new THREE.AmbientLight(0xffffff, 0.35));
-    const hemi = new THREE.HemisphereLight(0xddeeff, 0x444422, 0.55);
+    scene.add(new THREE.AmbientLight(0xffffff, 0.28));
+    const hemi = new THREE.HemisphereLight(0xe8f0ff, 0x3a3028, 0.5);
     scene.add(hemi);
 
-    // Main directional (sun through windows)
-    const sun = new THREE.DirectionalLight(0xfff4e6, 1.8);
-    sun.position.set(6, 10, 4);
+    const sun = new THREE.DirectionalLight(0xfff2e0, 1.6);
+    sun.position.set(5, 9, 3);
     sun.castShadow = true;
     sun.shadow.mapSize.set(2048, 2048);
-    sun.shadow.camera.near = 1;
-    sun.shadow.camera.far = 30;
-    sun.shadow.camera.left = -12;
-    sun.shadow.camera.right = 12;
-    sun.shadow.camera.top = 12;
-    sun.shadow.camera.bottom = -12;
-    sun.shadow.bias = -0.0003;
+    sun.shadow.camera.near = 0.5;
+    sun.shadow.camera.far = 28;
+    sun.shadow.camera.left = -10;
+    sun.shadow.camera.right = 10;
+    sun.shadow.camera.top = 10;
+    sun.shadow.camera.bottom = -10;
+    sun.shadow.bias = -0.00025;
+    sun.shadow.normalBias = 0.02;
     scene.add(sun);
 
-    // Soft fill lights inside rooms
-    const fill1 = new THREE.PointLight(0xffe8c8, 1.2, 12, 1.5);
-    fill1.position.set(-2, 2.2, -1);
-    fill1.castShadow = true;
-    scene.add(fill1);
+    const l1 = new THREE.PointLight(0xffe8c8, 1.1, 11, 1.6);
+    l1.position.set(2.2, 2.3, 1.0);
+    l1.castShadow = true;
+    scene.add(l1);
 
-    const fill2 = new THREE.PointLight(0xe8f0ff, 0.9, 10, 1.5);
-    fill2.position.set(2.5, 2.1, 2);
-    scene.add(fill2);
+    const l2 = new THREE.PointLight(0xe8f2ff, 0.75, 9, 1.6);
+    l2.position.set(-2.0, 2.2, -1.5);
+    scene.add(l2);
 
-    const fill3 = new THREE.PointLight(0xfff0d0, 0.7, 8, 1.8);
-    fill3.position.set(0, 2.0, -3.5);
-    scene.add(fill3);
+    const l3 = new THREE.PointLight(0xfff0d8, 0.6, 7, 1.8);
+    l3.position.set(-2.5, 2.1, -3.5);
+    scene.add(l3);
 
-    // ——— Controls ———
     const controls = new PointerLockControls(camera, document.body);
     scene.add(controls.getObject());
 
@@ -167,202 +156,165 @@
     const direction = new THREE.Vector3();
     const keys = { w: false, a: false, s: false, d: false, shift: false, space: false };
     let canJump = true;
-    const eyeHeight = 1.55;
-    const walkSpeed = 4.2;
-    const runSpeed = 7.5;
+    const eyeHeight = 1.6;
+    const walkSpeed = 3.8;
+    const runSpeed = 6.8;
 
-    // Collision helpers (simple AABB against model bounds + furniture)
-    const colliders = []; // { box: THREE.Box3 }
-    const playerRadius = 0.28;
-    const playerHeight = 1.7;
-
-    function addCollider(mesh) {
-      mesh.updateMatrixWorld(true);
-      const box = new THREE.Box3().setFromObject(mesh);
-      colliders.push({ box });
-    }
-
-    // ——— Load architecture (exact layout from your GLB) ———
     const loader = new GLTFLoader();
-    let building = null;
-
     loader.load(
       encodeURI('Sep 24, 06_09 PM (1).glb'),
       (gltf) => {
-        building = gltf.scene;
+        const building = gltf.scene;
         building.traverse((c) => {
           if (c.isMesh) {
             c.castShadow = true;
             c.receiveShadow = true;
-            // improve material a bit
+            if (c.geometry) c.geometry.computeVertexNormals();
             if (c.material) {
               c.material.side = THREE.FrontSide;
+              c.material.flatShading = false;
               if (c.material.map) {
                 c.material.map.anisotropy = renderer.capabilities.getMaxAnisotropy();
+                c.material.map.colorSpace = THREE.SRGBColorSpace;
+              }
+              if (c.material.roughness !== undefined) {
+                c.material.roughness = Math.min(1, (c.material.roughness || 0.8) + 0.05);
               }
               c.material.needsUpdate = true;
             }
           }
         });
-        // Center / orient if needed – model is already roughly centered
-        // Floor is around y ≈ -1.5, so raise so floor ≈ 0
         building.position.y = 1.51;
         scene.add(building);
-
-        // Approximate collision volume for whole building shell
-        // (soft – we mainly rely on not falling through floor)
-        addSimpleFurniture();
+        placeFurniture();
         progressEl.style.width = '100%';
-        setTimeout(() => { loading.style.display = 'none'; }, 300);
+        setTimeout(() => { loading.style.display = 'none'; }, 250);
       },
       (xhr) => {
-        if (xhr.total) {
-          progressEl.style.width = Math.min(99, (xhr.loaded / xhr.total) * 100) + '%';
-        }
+        if (xhr.total) progressEl.style.width = Math.min(98, (xhr.loaded / xhr.total) * 100) + '%';
       },
       (err) => {
         console.error(err);
-        loading.innerHTML = '<div style="color:#f66">Błąd ładowania modelu.<br>Upewnij się, że plik GLB jest w tym samym folderze.</div>';
+        loading.innerHTML = '<div style="color:#f66;text-align:center;padding:20px">Błąd ładowania modelu GLB.</div>';
       }
     );
 
-    // ——— Simple realistic furniture (procedural, layout-aware) ———
-    function mat(color, rough = 0.7, metal = 0.05) {
+    function M(color, rough = 0.75, metal = 0.02) {
       return new THREE.MeshStandardMaterial({ color, roughness: rough, metalness: metal });
     }
 
-    function box(w, h, d, material, x, y, z, rx = 0, ry = 0) {
-      const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), material);
+    function addBox(w, h, d, mat, x, y, z, ry = 0) {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
       m.position.set(x, y, z);
-      m.rotation.set(rx, ry, 0);
+      m.rotation.y = ry;
       m.castShadow = true;
       m.receiveShadow = true;
       scene.add(m);
-      addCollider(m);
       return m;
     }
 
-    function cylinder(r, h, material, x, y, z) {
-      const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, 16), material);
+    function addCyl(rTop, rBot, h, mat, x, y, z, seg = 16) {
+      const m = new THREE.Mesh(new THREE.CylinderGeometry(rTop, rBot, h, seg), mat);
       m.position.set(x, y, z);
       m.castShadow = true;
       m.receiveShadow = true;
       scene.add(m);
-      addCollider(m);
       return m;
     }
 
-    function addSimpleFurniture() {
-      // Floor plane for soft collision / shadows (invisible)
+    function placeFurniture() {
       const floor = new THREE.Mesh(
-        new THREE.PlaneGeometry(20, 20),
-        new THREE.ShadowMaterial({ opacity: 0.25 })
+        new THREE.PlaneGeometry(18, 18),
+        new THREE.ShadowMaterial({ opacity: 0.22 })
       );
       floor.rotation.x = -Math.PI / 2;
-      floor.position.y = 0.01;
+      floor.position.y = 0.015;
       floor.receiveShadow = true;
       scene.add(floor);
 
-      // Living area – sofa
-      const fabric = mat(0x3d4a5c, 0.85);
-      const wood = mat(0x5c4033, 0.6, 0.1);
-      const darkWood = mat(0x2c1e14, 0.55, 0.15);
-      const metal = mat(0x888888, 0.3, 0.8);
-      const white = mat(0xf5f5f0, 0.4);
-      const glass = new THREE.MeshPhysicalMaterial({ color: 0xffffff, transmission: 0.9, roughness: 0.05, metalness: 0, opacity: 1 });
+      const fabric = M(0x3a4555, 0.88);
+      const fabricLight = M(0xc8c0b4, 0.9);
+      const wood = M(0x6b4e3a, 0.55, 0.08);
+      const darkWood = M(0x2e2118, 0.5, 0.12);
+      const white = M(0xf0efe9, 0.45);
+      const counter = M(0x2a2a2c, 0.35, 0.15);
+      const chrome = M(0xb0b0b8, 0.25, 0.85);
+      const plantGreen = M(0x2a5a28, 0.92);
 
-      // Sofa (L-shape approximation)
-      box(2.4, 0.45, 0.9, fabric, -1.8, 0.25, 1.2);
-      box(0.9, 0.45, 1.8, fabric, -0.55, 0.25, 1.65);
-      // back cushions
-      box(2.4, 0.55, 0.18, fabric, -1.8, 0.75, 0.8);
-      box(0.18, 0.55, 1.8, fabric, -0.15, 0.75, 1.65);
+      // Living + kitchen (right)
+      addBox(2.2, 0.42, 0.85, fabric, 1.6, 0.22, 0.8);
+      addBox(2.2, 0.5, 0.16, fabric, 1.6, 0.68, 0.42);
+      addBox(0.18, 0.35, 0.7, fabric, 0.6, 0.55, 0.75);
+      addBox(0.18, 0.35, 0.7, fabric, 2.6, 0.55, 0.75);
 
-      // Coffee table
-      box(1.1, 0.05, 0.6, wood, -1.6, 0.38, 2.6);
-      box(0.08, 0.35, 0.08, metal, -2.05, 0.18, 2.35);
-      box(0.08, 0.35, 0.08, metal, -1.15, 0.18, 2.35);
-      box(0.08, 0.35, 0.08, metal, -2.05, 0.18, 2.85);
-      box(0.08, 0.35, 0.08, metal, -1.15, 0.18, 2.85);
+      addBox(1.0, 0.04, 0.55, wood, 1.6, 0.36, 1.9);
+      addBox(0.06, 0.32, 0.06, chrome, 1.2, 0.16, 1.7);
+      addBox(0.06, 0.32, 0.06, chrome, 2.0, 0.16, 1.7);
+      addBox(0.06, 0.32, 0.06, chrome, 1.2, 0.16, 2.1);
+      addBox(0.06, 0.32, 0.06, chrome, 2.0, 0.16, 2.1);
 
-      // TV stand + TV
-      box(1.8, 0.5, 0.4, darkWood, -1.5, 0.25, 3.9);
-      box(1.4, 0.8, 0.06, mat(0x111111, 0.3, 0.2), -1.5, 1.1, 3.95);
+      addBox(1.6, 0.45, 0.38, darkWood, 1.6, 0.23, 3.3);
+      addBox(1.3, 0.75, 0.05, M(0x111111, 0.25, 0.3), 1.6, 1.05, 3.38);
 
-      // Dining table + chairs
-      box(1.4, 0.05, 0.9, wood, 2.2, 0.75, 0.5);
-      // legs
-      [[1.6, 0.15], [2.8, 0.15], [1.6, 0.85], [2.8, 0.85]].forEach(([x, z]) => {
-        box(0.06, 0.7, 0.06, wood, x, 0.35, z);
+      addBox(2.4, 0.88, 0.6, white, 3.3, 0.44, -0.8);
+      addBox(2.4, 0.035, 0.6, counter, 3.3, 0.9, -0.8);
+      addCyl(0.18, 0.18, 0.08, chrome, 3.8, 0.94, -0.8, 20);
+
+      addBox(1.3, 0.04, 0.8, wood, 3.0, 0.74, 1.5);
+      [[2.5, 1.2], [3.5, 1.2], [2.5, 1.8], [3.5, 1.8]].forEach(([x, z]) => {
+        addBox(0.05, 0.7, 0.05, wood, x, 0.35, z);
       });
-      // 4 chairs
-      [[1.5, -0.2], [2.9, -0.2], [1.5, 1.2], [2.9, 1.2]].forEach(([x, z]) => {
-        box(0.45, 0.08, 0.45, fabric, x, 0.45, z);
-        box(0.08, 0.4, 0.08, wood, x - 0.15, 0.2, z - 0.15);
-        box(0.08, 0.4, 0.08, wood, x + 0.15, 0.2, z - 0.15);
-        box(0.08, 0.4, 0.08, wood, x - 0.15, 0.2, z + 0.15);
-        box(0.08, 0.4, 0.08, wood, x + 0.15, 0.2, z + 0.15);
-        box(0.45, 0.45, 0.06, fabric, x, 0.7, z - 0.2);
+      [[2.4, 1.0], [3.6, 1.0], [2.4, 2.0], [3.6, 2.0]].forEach(([x, z]) => {
+        addBox(0.4, 0.06, 0.4, fabric, x, 0.42, z);
+        addBox(0.4, 0.4, 0.05, fabric, x, 0.65, z - 0.18);
       });
 
-      // Kitchen island / counter
-      box(2.2, 0.9, 0.65, white, 2.4, 0.45, -2.2);
-      box(2.2, 0.04, 0.65, mat(0x333333, 0.2, 0.3), 2.4, 0.92, -2.2);
+      // Bedroom (top-left)
+      addBox(1.7, 0.32, 2.0, fabric, -2.6, 0.18, -3.4);
+      addBox(1.7, 0.12, 0.35, fabricLight, -2.6, 0.42, -4.2);
+      addBox(0.55, 0.1, 0.35, fabricLight, -3.1, 0.42, -3.6);
+      addBox(0.55, 0.1, 0.35, fabricLight, -2.1, 0.42, -3.6);
+      addBox(0.4, 0.42, 0.35, darkWood, -3.7, 0.22, -4.1);
+      addBox(0.4, 0.42, 0.35, darkWood, -1.5, 0.22, -4.1);
+      addBox(1.1, 2.1, 0.5, white, -0.3, 1.05, -4.3);
 
-      // Bed (bedroom side)
-      box(1.8, 0.35, 2.1, fabric, -2.5, 0.25, -3.2);
-      box(1.8, 0.15, 0.25, white, -2.5, 0.5, -4.1); // headboard pillows
-      box(0.7, 0.12, 0.4, white, -3.0, 0.5, -3.5);
-      box(0.7, 0.12, 0.4, white, -2.0, 0.5, -3.5);
+      // Bathroom (bottom-left)
+      addBox(0.7, 0.55, 0.45, white, -3.0, 0.28, 2.8);
+      addCyl(0.28, 0.28, 0.12, chrome, -3.0, 0.58, 2.8, 20);
+      addBox(0.7, 0.04, 0.45, counter, -3.0, 0.57, 2.8);
 
-      // Nightstands
-      box(0.45, 0.45, 0.4, darkWood, -3.6, 0.25, -4.0);
-      box(0.45, 0.45, 0.4, darkWood, -1.4, 0.25, -4.0);
-
-      // Wardrobe
-      box(1.2, 2.2, 0.55, white, 0.5, 1.1, -4.5);
+      // Technical
+      addBox(0.9, 1.6, 0.55, M(0x3a3a3e, 0.6), -3.2, 0.8, 0.2);
 
       // Plant
-      cylinder(0.18, 0.4, mat(0x4a3728, 0.8), 3.5, 0.2, 3.0);
-      const plant = new THREE.Mesh(
-        new THREE.SphereGeometry(0.45, 12, 10),
-        mat(0x2d5a27, 0.9)
-      );
-      plant.position.set(3.5, 0.75, 3.0);
-      plant.castShadow = true;
-      scene.add(plant);
+      addCyl(0.16, 0.14, 0.35, M(0x4a3728, 0.85), 3.6, 0.18, 3.0);
+      const foliage = new THREE.Mesh(new THREE.SphereGeometry(0.38, 10, 8), plantGreen);
+      foliage.position.set(3.6, 0.65, 3.0);
+      foliage.castShadow = true;
+      scene.add(foliage);
 
-      // Rug under sofa
-      const rug = new THREE.Mesh(
-        new THREE.PlaneGeometry(3.2, 2.4),
-        mat(0x6b4f3a, 0.95)
-      );
+      const rug = new THREE.Mesh(new THREE.PlaneGeometry(2.8, 2.0), M(0x5c4030, 0.95));
       rug.rotation.x = -Math.PI / 2;
-      rug.position.set(-1.5, 0.02, 2.0);
+      rug.position.set(1.6, 0.02, 1.4);
       rug.receiveShadow = true;
       scene.add(rug);
     }
 
-    // ——— Input ———
     document.addEventListener('keydown', (e) => {
-      switch (e.code) {
-        case 'KeyW': keys.w = true; break;
-        case 'KeyA': keys.a = true; break;
-        case 'KeyS': keys.s = true; break;
-        case 'KeyD': keys.d = true; break;
-        case 'ShiftLeft': case 'ShiftRight': keys.shift = true; break;
-        case 'Space': keys.space = true; e.preventDefault(); break;
-      }
+      if (e.code === 'KeyW') keys.w = true;
+      if (e.code === 'KeyA') keys.a = true;
+      if (e.code === 'KeyS') keys.s = true;
+      if (e.code === 'KeyD') keys.d = true;
+      if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') keys.shift = true;
+      if (e.code === 'Space') { keys.space = true; e.preventDefault(); }
     });
     document.addEventListener('keyup', (e) => {
-      switch (e.code) {
-        case 'KeyW': keys.w = false; break;
-        case 'KeyA': keys.a = false; break;
-        case 'KeyS': keys.s = false; break;
-        case 'KeyD': keys.d = false; break;
-        case 'ShiftLeft': case 'ShiftRight': keys.shift = false; break;
-        case 'Space': keys.space = false; break;
-      }
+      if (e.code === 'KeyW') keys.w = false;
+      if (e.code === 'KeyA') keys.a = false;
+      if (e.code === 'KeyS') keys.s = false;
+      if (e.code === 'KeyD') keys.d = false;
+      if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') keys.shift = false;
+      if (e.code === 'Space') keys.space = false;
     });
 
     startBtn.addEventListener('click', () => {
@@ -370,7 +322,6 @@
         blocker.style.display = 'none';
         document.getElementById('joystick-zone').style.display = 'block';
         document.getElementById('look-zone').style.display = 'block';
-        // request fullscreen if possible
         if (document.documentElement.requestFullscreen) {
           document.documentElement.requestFullscreen().catch(() => {});
         }
@@ -381,44 +332,31 @@
     controls.addEventListener('lock', () => { blocker.style.display = 'none'; });
     controls.addEventListener('unlock', () => { blocker.style.display = 'flex'; });
 
-    // ——— Mobile joystick + look ———
-    let joyActive = false, joyOrigin = { x: 0, y: 0 }, joyVec = { x: 0, y: 0 };
+    let joyActive = false, joyVec = { x: 0, y: 0 };
     const knob = document.getElementById('joystick-knob');
     const joyZone = document.getElementById('joystick-zone');
     const lookZone = document.getElementById('look-zone');
 
-    function handleJoyStart(e) {
-      e.preventDefault();
-      joyActive = true;
-      const t = e.touches ? e.touches[0] : e;
-      const rect = joyZone.getBoundingClientRect();
-      joyOrigin.x = t.clientX - rect.left;
-      joyOrigin.y = t.clientY - rect.top;
-    }
-    function handleJoyMove(e) {
+    joyZone.addEventListener('touchstart', (e) => { e.preventDefault(); joyActive = true; }, { passive: false });
+    joyZone.addEventListener('touchmove', (e) => {
       if (!joyActive) return;
       e.preventDefault();
-      const t = e.touches ? e.touches[0] : e;
+      const t = e.touches[0];
       const rect = joyZone.getBoundingClientRect();
-      let dx = t.clientX - rect.left - 60;
-      let dy = t.clientY - rect.top - 60;
-      const max = 40;
-      const len = Math.hypot(dx, dy);
-      if (len > max) { dx = (dx / len) * max; dy = (dy / len) * max; }
+      let dx = t.clientX - rect.left - 55;
+      let dy = t.clientY - rect.top - 55;
+      const max = 36;
+      const len = Math.hypot(dx, dy) || 1;
+      if (len > max) { dx = dx / len * max; dy = dy / len * max; }
       knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
       joyVec.x = dx / max;
       joyVec.y = -dy / max;
-    }
-    function handleJoyEnd() {
-      joyActive = false;
-      joyVec.x = joyVec.y = 0;
+    }, { passive: false });
+    joyZone.addEventListener('touchend', () => {
+      joyActive = false; joyVec.x = joyVec.y = 0;
       knob.style.transform = 'translate(-50%, -50%)';
-    }
-    joyZone.addEventListener('touchstart', handleJoyStart, { passive: false });
-    joyZone.addEventListener('touchmove', handleJoyMove, { passive: false });
-    joyZone.addEventListener('touchend', handleJoyEnd);
+    });
 
-    // Look (touch drag on right side)
     let lookPrev = null;
     lookZone.addEventListener('touchstart', (e) => {
       lookPrev = { x: e.touches[0].clientX, y: e.touches[0].clientY };
@@ -431,17 +369,14 @@
       lookPrev = { x: t.clientX, y: t.clientY };
       const euler = new THREE.Euler(0, 0, 0, 'YXZ');
       euler.setFromQuaternion(camera.quaternion);
-      euler.y -= dx * 0.004;
-      euler.x -= dy * 0.004;
-      euler.x = Math.max(-Math.PI / 2 + 0.05, Math.min(Math.PI / 2 - 0.05, euler.x));
+      euler.y -= dx * 0.0038;
+      euler.x -= dy * 0.0038;
+      euler.x = Math.max(-1.4, Math.min(1.4, euler.x));
       camera.quaternion.setFromEuler(euler);
     }, { passive: true });
     lookZone.addEventListener('touchend', () => { lookPrev = null; });
 
-    // ——— Physics / movement loop ———
-    const clock = new THREE.Clock();
     let prevTime = performance.now();
-
     function animate() {
       requestAnimationFrame(animate);
       const time = performance.now();
@@ -449,10 +384,9 @@
       prevTime = time;
 
       if (controls.isLocked || isMobile) {
-        // friction
-        velocity.x -= velocity.x * 8.0 * dt;
-        velocity.z -= velocity.z * 8.0 * dt;
-        velocity.y -= 9.8 * 2.5 * dt; // gravity
+        velocity.x -= velocity.x * 9.0 * dt;
+        velocity.z -= velocity.z * 9.0 * dt;
+        velocity.y -= 22 * dt;
 
         direction.z = Number(keys.w) - Number(keys.s);
         direction.x = Number(keys.d) - Number(keys.a);
@@ -463,11 +397,11 @@
         direction.normalize();
 
         const speed = keys.shift ? runSpeed : walkSpeed;
-        if (keys.w || keys.s || Math.abs(joyVec.y) > 0.05) velocity.z -= direction.z * speed * 12 * dt;
-        if (keys.a || keys.d || Math.abs(joyVec.x) > 0.05) velocity.x -= direction.x * speed * 12 * dt;
+        if (keys.w || keys.s || Math.abs(joyVec.y) > 0.04) velocity.z -= direction.z * speed * 14 * dt;
+        if (keys.a || keys.d || Math.abs(joyVec.x) > 0.04) velocity.x -= direction.x * speed * 14 * dt;
 
         if (keys.space && canJump) {
-          velocity.y = 6.5;
+          velocity.y = 6.2;
           canJump = false;
         }
 
@@ -475,17 +409,15 @@
         controls.moveForward(-velocity.z * dt);
         controls.getObject().position.y += velocity.y * dt;
 
-        // Floor
         if (controls.getObject().position.y < eyeHeight) {
           velocity.y = 0;
           controls.getObject().position.y = eyeHeight;
           canJump = true;
         }
 
-        // Soft bounds (keep inside approximate building)
         const p = controls.getObject().position;
-        p.x = THREE.MathUtils.clamp(p.x, -4.4, 4.4);
-        p.z = THREE.MathUtils.clamp(p.z, -5.3, 5.3);
+        p.x = THREE.MathUtils.clamp(p.x, -4.3, 4.3);
+        p.z = THREE.MathUtils.clamp(p.z, -5.2, 5.2);
       }
 
       renderer.render(scene, camera);
@@ -498,9 +430,10 @@
       renderer.setSize(window.innerWidth, window.innerHeight);
     });
 
-    // Prevent context menu / scroll on mobile
     document.addEventListener('contextmenu', e => e.preventDefault());
-    document.body.addEventListener('touchmove', e => { if (e.target.closest('#joystick-zone,#look-zone')) e.preventDefault(); }, { passive: false });
+    document.body.addEventListener('touchmove', e => {
+      if (e.target.closest('#joystick-zone,#look-zone')) e.preventDefault();
+    }, { passive: false });
   </script>
 </body>
 </html>
