@@ -187,7 +187,7 @@
     let building = null;
 
     loader.load(
-      'apartment.glb',
+      encodeURI('Sep 24, 06_09 PM (1).glb'),
       (gltf) => {
         building = gltf.scene;
         building.traverse((c) => {
@@ -222,7 +222,7 @@
       },
       (err) => {
         console.error(err);
-        loading.innerHTML = '<div style="color:#f66">Błąd ładowania modelu.<br>Upewnij się, że apartment.glb jest w tym samym folderze.</div>';
+        loading.innerHTML = '<div style="color:#f66">Błąd ładowania modelu.<br>Upewnij się, że plik GLB jest w tym samym folderze.</div>';
       }
     );
 
@@ -269,7 +269,7 @@
       const darkWood = mat(0x2c1e14, 0.55, 0.15);
       const metal = mat(0x888888, 0.3, 0.8);
       const white = mat(0xf5f5f0, 0.4);
-      const glass = new THREE.MeshPhysicalMaterial({ color: 0xffffff, transmission: 0.9, roughness: 0.05, metalness: 0, roughness: 1 });
+      const glass = new THREE.MeshPhysicalMaterial({ color: 0xffffff, transmission: 0.9, roughness: 0.05, metalness: 0, opacity: 1 });
 
       // Sofa (L-shape approximation)
       box(2.4, 0.45, 0.9, fabric, -1.8, 0.25, 1.2);
