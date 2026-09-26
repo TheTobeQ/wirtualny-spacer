@@ -160,9 +160,10 @@
     const walkSpeed = 3.8;
     const runSpeed = 6.8;
 
+    const modelUrl = 'room_textured-2.glb?cacheBust=' + Date.now();
     const loader = new GLTFLoader();
     loader.load(
-      'room_textured-2.glb',
+      modelUrl,
       (gltf) => {
         const building = gltf.scene;
         building.traverse((c) => {
