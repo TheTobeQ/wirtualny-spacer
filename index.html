@@ -3,80 +3,105 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Wirtualny spacer</title>
+  <title>Spacer po nieruchomości</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { width: 100%; height: 100%; overflow: hidden; background: #0c0c0e; font-family: system-ui, -apple-system, sans-serif; }
-    #canvas { display: block; width: 100%; height: 100%; touch-action: none; }
-    #blocker {
-      position: absolute; inset: 0; background: rgba(8,8,10,0.78);
+    html, body { width: 100%; height: 100%; overflow: hidden; background: #1a1c20; font-family: system-ui, -apple-system, sans-serif; }
+    canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+    #topbar {
+      position: absolute; top: 14px; left: 14px; z-index: 10;
+      background: rgba(20,24,30,0.88); backdrop-filter: blur(10px);
+      color: #fff; padding: 10px 16px; border-radius: 12px;
+      font-size: 13px; line-height: 1.35; pointer-events: none;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+    #topbar strong { display: block; font-size: 14px; margin-bottom: 2px; }
+    #topbar span { opacity: 0.7; font-size: 12px; }
+    #modes {
+      position: absolute; top: 14px; right: 14px; z-index: 10;
+      display: flex; gap: 6px; background: rgba(20,24,30,0.88);
+      backdrop-filter: blur(10px); padding: 5px; border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+    #modes button {
+      border: none; padding: 9px 16px; border-radius: 9px;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      background: transparent; color: rgba(255,255,255,0.65);
+      transition: all 0.15s;
+    }
+    #modes button.active { background: #e8d5b5; color: #1a1a1a; }
+    #modes button:hover:not(.active) { color: #fff; }
+    #panel {
+      position: absolute; left: 50%; bottom: 22px; transform: translateX(-50%);
+      z-index: 10; background: rgba(18,22,28,0.92); backdrop-filter: blur(12px);
+      color: #eee; padding: 18px 22px; border-radius: 16px; text-align: center;
+      max-width: min(420px, 92vw); box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+    #panel p { font-size: 13px; opacity: 0.75; margin: 8px 0 14px; line-height: 1.5; }
+    #panel .btns { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+    #panel button {
+      border: none; padding: 11px 20px; border-radius: 10px;
+      font-size: 14px; font-weight: 600; cursor: pointer;
+    }
+    #enter { background: #7dcea0; color: #0f1a12; }
+    #enter:hover { background: #8fd9ae; }
+    #reset { background: rgba(255,255,255,0.12); color: #ddd; }
+    #reset:hover { background: rgba(255,255,255,0.18); }
+    #loading {
+      position: absolute; inset: 0; background: #12141a; z-index: 30;
       display: flex; flex-direction: column; align-items: center; justify-content: center;
-      color: #fff; z-index: 10; cursor: pointer; text-align: center; padding: 24px;
+      color: #ccc; gap: 14px; font-size: 14px;
     }
-    #blocker h1 { font-size: clamp(1.5rem, 4vw, 2.1rem); margin-bottom: 10px; font-weight: 600; letter-spacing: -0.02em; }
-    #blocker p { opacity: 0.8; max-width: 400px; line-height: 1.55; font-size: 0.95rem; }
-    #blocker .btn {
-      margin-top: 26px; padding: 13px 30px; background: #f2f2f2; color: #111;
-      border: none; border-radius: 9px; font-size: 1rem; font-weight: 600; cursor: pointer;
-    }
-    #blocker .btn:hover { background: #fff; }
-    #hud {
-      position: absolute; left: 14px; bottom: 14px; color: rgba(255,255,255,0.55);
-      font-size: 11px; pointer-events: none; z-index: 5; line-height: 1.4;
-    }
+    #loading .bar { width: 200px; height: 3px; background: #2a2e36; border-radius: 2px; overflow: hidden; }
+    #loading .fill { height: 100%; width: 0%; background: #7eb8ff; transition: width 0.12s; }
     #crosshair {
-      position: absolute; top: 50%; left: 50%; width: 14px; height: 14px;
-      margin: -7px 0 0 -7px; pointer-events: none; z-index: 4;
-      border: 1.5px solid rgba(255,255,255,0.45); border-radius: 50%;
+      position: absolute; top: 50%; left: 50%; width: 12px; height: 12px;
+      margin: -6px 0 0 -6px; border: 1.5px solid rgba(255,255,255,0.4);
+      border-radius: 50%; pointer-events: none; z-index: 5; display: none;
     }
-    #joystick-zone {
-      position: absolute; left: 18px; bottom: 18px; width: 110px; height: 110px;
-      display: none; z-index: 6; touch-action: none;
+    #joy {
+      position: absolute; left: 20px; bottom: 20px; width: 120px; height: 120px;
+      display: none; z-index: 8; touch-action: none;
     }
-    #joystick-base {
+    #joy-base {
       width: 100%; height: 100%; border-radius: 50%;
-      background: rgba(255,255,255,0.1); border: 1.5px solid rgba(255,255,255,0.22);
+      background: rgba(255,255,255,0.08); border: 1.5px solid rgba(255,255,255,0.2);
       position: relative;
     }
-    #joystick-knob {
-      position: absolute; width: 44px; height: 44px; border-radius: 50%;
-      background: rgba(255,255,255,0.4); top: 50%; left: 50%;
-      transform: translate(-50%, -50%); touch-action: none;
+    #joy-knob {
+      position: absolute; width: 48px; height: 48px; border-radius: 50%;
+      background: rgba(255,255,255,0.35); top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
     }
-    #look-zone {
+    #look {
       position: absolute; right: 0; top: 0; width: 55%; height: 100%;
-      display: none; z-index: 5; touch-action: none;
+      display: none; z-index: 6; touch-action: none;
     }
-    #loading {
-      position: absolute; inset: 0; background: #0c0c0e; display: flex;
-      align-items: center; justify-content: center; color: #eee; z-index: 20;
-      flex-direction: column; gap: 14px; font-size: 14px;
-    }
-    #loading .bar {
-      width: 180px; height: 3px; background: #2a2a2e; border-radius: 2px; overflow: hidden;
-    }
-    #loading .fill { height: 100%; width: 0%; background: #7eb8ff; transition: width 0.15s; }
   </style>
 </head>
 <body>
   <div id="loading">
-    <div>Ładowanie…</div>
+    <div>Ładowanie modelu…</div>
     <div class="bar"><div class="fill" id="progress"></div></div>
   </div>
-  <div id="blocker">
-    <h1>Wirtualny spacer</h1>
-    <p>
-      <strong>WASD</strong> – chodzenie &nbsp;·&nbsp; <strong>Mysz</strong> – rozglądanie<br>
-      <strong>Shift</strong> – bieg &nbsp;·&nbsp; <strong>Spacja</strong> – skok<br>
-      Telefon: joystick + przeciąganie
-    </p>
-    <button class="btn" id="startBtn">Wejdź</button>
+  <div id="topbar">
+    <strong>Spacer po nieruchomości</strong>
+    <span id="modeLabel">Stan faktyczny · bez umeblowania</span>
+  </div>
+  <div id="modes">
+    <button id="btnActual" class="active">Stan faktyczny</button>
+    <button id="btnFinished">Wykończone</button>
+  </div>
+  <div id="panel">
+    <p id="hint">Rozejrzyj się myszą. Poruszaj się WASD lub strzałkami. Shift — szybciej, Esc — pauza.</p>
+    <div class="btns">
+      <button id="enter">Wejdź do środka</button>
+      <button id="reset">Wróć do początku</button>
+    </div>
   </div>
   <div id="crosshair"></div>
-  <div id="hud">Wejście → kuchnia/salon (prawo) · łazienka · techniczne · sypialnia</div>
-  <div id="joystick-zone"><div id="joystick-base"><div id="joystick-knob"></div></div></div>
-  <div id="look-zone"></div>
-  <canvas id="canvas"></canvas>
+  <div id="joy"><div id="joy-base"><div id="joy-knob"></div></div></div>
+  <div id="look"></div>
 
   <script type="importmap">
   {
@@ -89,352 +114,460 @@
   <script type="module">
     import * as THREE from 'three';
     import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-    import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
     import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+    import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 
-    const canvas = document.getElementById('canvas');
-    const blocker = document.getElementById('blocker');
-    const startBtn = document.getElementById('startBtn');
-    const loading = document.getElementById('loading');
-    const progressEl = document.getElementById('progress');
+    const $ = id => document.getElementById(id);
     const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || ('ontouchstart' in window);
 
-    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setSize(window.innerWidth, window.innerHeight);
+    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 1.75));
+    renderer.setSize(innerWidth, innerHeight);
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.05;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.25;
-    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    document.body.prepend(renderer.domElement);
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x12141a);
-    scene.fog = new THREE.FogExp2(0x12141a, 0.018);
+    scene.background = new THREE.Color('#c5d5e0');
 
-    const camera = new THREE.PerspectiveCamera(68, window.innerWidth / window.innerHeight, 0.05, 60);
-    camera.position.set(0.3, 1.6, 4.2);
+    const camera = new THREE.PerspectiveCamera(65, innerWidth / innerHeight, 0.05, 80);
+    camera.rotation.order = 'YXZ';
 
     const pmrem = new THREE.PMREMGenerator(renderer);
-    scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.03).texture;
+    scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+    scene.environmentIntensity = 0.4;
 
-    scene.add(new THREE.AmbientLight(0xffffff, 0.28));
-    const hemi = new THREE.HemisphereLight(0xe8f0ff, 0x3a3028, 0.5);
-    scene.add(hemi);
+    scene.add(new THREE.HemisphereLight(0xe8f2ff, 0xc8beb0, 1.4));
+    scene.add(new THREE.AmbientLight(0xfff5e8, 0.55));
 
-    const sun = new THREE.DirectionalLight(0xfff2e0, 1.6);
-    sun.position.set(5, 9, 3);
+    const sun = new THREE.DirectionalLight(0xfff1e0, 2.8);
+    sun.position.set(-10, 14, 6);
+    sun.target.position.set(0, 0, -1);
     sun.castShadow = true;
     sun.shadow.mapSize.set(2048, 2048);
-    sun.shadow.camera.near = 0.5;
-    sun.shadow.camera.far = 28;
-    sun.shadow.camera.left = -10;
-    sun.shadow.camera.right = 10;
-    sun.shadow.camera.top = 10;
-    sun.shadow.camera.bottom = -10;
-    sun.shadow.bias = -0.00025;
-    sun.shadow.normalBias = 0.02;
-    scene.add(sun);
+    Object.assign(sun.shadow.camera, { left: -11, right: 11, top: 11, bottom: -11, near: 0.2, far: 45 });
+    sun.shadow.normalBias = 0.03;
+    sun.shadow.bias = -0.00015;
+    scene.add(sun, sun.target);
 
-    const l1 = new THREE.PointLight(0xffe8c8, 1.1, 11, 1.6);
-    l1.position.set(2.2, 2.3, 1.0);
-    l1.castShadow = true;
-    scene.add(l1);
+    const lampPts = [];
+    function addLampLight(x, y, z, intensity = 1.2) {
+      const l = new THREE.PointLight(0xffe8c8, intensity, 9, 1.5);
+      l.position.set(x, y, z);
+      scene.add(l);
+      lampPts.push(l);
+      return l;
+    }
+    addLampLight(-1.0, 2.35, 0.2, 0.9);
+    addLampLight(2.8, 2.35, 1.0, 1.1);
+    addLampLight(2.5, 2.35, -3.6, 0.85);
+    addLampLight(0.1, 2.35, -3.6, 0.7);
 
-    const l2 = new THREE.PointLight(0xe8f2ff, 0.75, 9, 1.6);
-    l2.position.set(-2.0, 2.2, -1.5);
-    scene.add(l2);
+    let furnished = false;
+    let active = false;
+    let ready = false;
+    const keys = new Set();
+    const clock = new THREE.Clock();
+    const spawn = new THREE.Vector3(-3.8, 1.55, 2.6);
+    const spawnYaw = -0.55;
+    let modelRoot = null;
+    let finishGroup = null;
+    const bounds = { minX: -4.5, maxX: 4.9, minZ: -5.2, maxZ: 3.2 };
 
-    const l3 = new THREE.PointLight(0xfff0d8, 0.6, 7, 1.8);
-    l3.position.set(-2.5, 2.1, -3.5);
-    scene.add(l3);
+    function resetCam() {
+      camera.position.copy(spawn);
+      camera.rotation.set(0, spawnYaw, 0);
+    }
+    resetCam();
 
-    const controls = new PointerLockControls(camera, document.body);
-    scene.add(controls.getObject());
+    function M(color, rough = 0.7, metal = 0.02, extra = {}) {
+      return new THREE.MeshStandardMaterial({ color, roughness: rough, metalness: metal, ...extra });
+    }
+    function woodMat(hex = '#a67c52') { return M(hex, 0.55, 0.05); }
+    function fabricMat(hex = '#d8d0c4') { return M(hex, 0.92, 0.0); }
+    function paintMat(hex = '#f2ebe0') { return M(hex, 0.55, 0.0); }
 
-    const velocity = new THREE.Vector3();
-    const direction = new THREE.Vector3();
-    const keys = { w: false, a: false, s: false, d: false, shift: false, space: false };
-    let canJump = true;
-    const eyeHeight = 1.6;
-    const walkSpeed = 3.8;
-    const runSpeed = 6.8;
+    function createFurniture() {
+      const g = new THREE.Group();
+      g.name = 'Wykończone';
 
-    const modelUrl = 'room_textured-2.glb?cacheBust=' + Date.now();
-    const loader = new GLTFLoader();
-    loader.load(
-      modelUrl,
-      (gltf) => {
-        const building = gltf.scene;
-        building.traverse((c) => {
-          if (c.isMesh) {
-            c.castShadow = true;
-            c.receiveShadow = true;
-            if (c.geometry) c.geometry.computeVertexNormals();
-            if (c.material) {
-              c.material.side = THREE.FrontSide;
-              c.material.flatShading = false;
-              if (c.material.map) {
-                c.material.map.anisotropy = renderer.capabilities.getMaxAnisotropy();
-                c.material.map.colorSpace = THREE.SRGBColorSpace;
-              }
-              if (c.material.roughness !== undefined) {
-                c.material.roughness = Math.min(1, (c.material.roughness || 0.8) + 0.05);
-              }
-              c.material.needsUpdate = true;
-            }
-          }
-        });
-        building.position.y = 1.51;
-        scene.add(building);
-        placeFurniture();
-        progressEl.style.width = '100%';
-        setTimeout(() => { loading.style.display = 'none'; }, 250);
-      },
-      (xhr) => {
-        if (xhr.total) progressEl.style.width = Math.min(98, (xhr.loaded / xhr.total) * 100) + '%';
-      },
-      (err) => {
-        console.error(err);
-        loading.innerHTML = '<div style="color:#f66;text-align:center;padding:20px">Błąd ładowania modelu GLB.</div>';
+      const oak = woodMat('#b8956a');
+      const oakDark = woodMat('#7a5a3a');
+      const oakLight = woodMat('#c9a97a');
+      const cream = paintMat('#f0e8dc');
+      const offWhite = paintMat('#f7f3ec');
+      const fabric = fabricMat('#e8e0d4');
+      const fabricSage = fabricMat('#8a9a80');
+      const fabricGrey = fabricMat('#c5c0b8');
+      const black = M('#2a2c2a', 0.35, 0.15);
+      const chrome = M('#b8b8bc', 0.22, 0.85);
+      const stone = M('#d8d0c4', 0.5, 0.02);
+      const glass = M('#c8d8d4', 0.08, 0.1, { transparent: true, opacity: 0.18, depthWrite: false });
+      const rugCol = M('#b8a890', 0.95);
+
+      function box(w, h, d, x, y, z, mat, r = 0.02, parent = g) {
+        const geo = r > 0.001
+          ? new RoundedBoxGeometry(w, h, d, 2, Math.min(r, w * 0.2, h * 0.2, d * 0.2))
+          : new THREE.BoxGeometry(w, h, d);
+        const m = new THREE.Mesh(geo, mat);
+        m.position.set(x, y, z);
+        m.castShadow = true;
+        m.receiveShadow = true;
+        parent.add(m);
+        return m;
       }
-    );
+      function cyl(rTop, rBot, h, x, y, z, mat, segs = 24, parent = g) {
+        const m = new THREE.Mesh(new THREE.CylinderGeometry(rTop, rBot, h, segs), mat);
+        m.position.set(x, y, z);
+        m.castShadow = true;
+        m.receiveShadow = true;
+        parent.add(m);
+        return m;
+      }
 
-    function M(color, rough = 0.75, metal = 0.02) {
-      return new THREE.MeshStandardMaterial({ color, roughness: rough, metalness: metal });
-    }
+      const floorLiv = new THREE.Mesh(new THREE.PlaneGeometry(9.5, 8.5), M('#c4a882', 0.65, 0.04));
+      floorLiv.rotation.x = -Math.PI / 2;
+      floorLiv.position.set(0.3, 0.012, -0.8);
+      floorLiv.receiveShadow = true;
+      g.add(floorLiv);
 
-    function addBox(w, h, d, mat, x, y, z, ry = 0) {
-      const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
-      m.position.set(x, y, z);
-      m.rotation.y = ry;
-      m.castShadow = true;
-      m.receiveShadow = true;
-      scene.add(m);
-      return m;
-    }
+      // Sofa
+      const sofaX = 1.7, sofaZ = 1.1;
+      box(2.4, 0.38, 0.92, sofaX, 0.22, sofaZ, fabricGrey, 0.04);
+      box(2.4, 0.48, 0.18, sofaX, 0.62, sofaZ - 0.38, fabricGrey, 0.03);
+      box(0.16, 0.38, 0.78, sofaX - 1.12, 0.52, sofaZ + 0.02, fabricGrey, 0.03);
+      box(0.16, 0.38, 0.78, sofaX + 1.12, 0.52, sofaZ + 0.02, fabricGrey, 0.03);
+      box(0.7, 0.14, 0.55, sofaX - 0.7, 0.48, sofaZ + 0.08, fabric, 0.05);
+      box(0.7, 0.14, 0.55, sofaX + 0.15, 0.48, sofaZ + 0.08, fabric, 0.05);
+      box(0.45, 0.28, 0.12, sofaX + 0.85, 0.55, sofaZ - 0.25, fabricSage, 0.04);
 
-    function addCyl(rTop, rBot, h, mat, x, y, z, seg = 16) {
-      const m = new THREE.Mesh(new THREE.CylinderGeometry(rTop, rBot, h, seg), mat);
-      m.position.set(x, y, z);
-      m.castShadow = true;
-      m.receiveShadow = true;
-      scene.add(m);
-      return m;
-    }
-
-    function placeFurniture() {
-      const floor = new THREE.Mesh(
-        new THREE.PlaneGeometry(18, 18),
-        new THREE.ShadowMaterial({ opacity: 0.22 })
-      );
-      floor.rotation.x = -Math.PI / 2;
-      floor.position.y = 0.015;
-      floor.receiveShadow = true;
-      scene.add(floor);
-
-      const fabric = M(0x3a4555, 0.88);
-      const fabricLight = M(0xc8c0b4, 0.9);
-      const wood = M(0x6b4e3a, 0.55, 0.08);
-      const darkWood = M(0x2e2118, 0.5, 0.12);
-      const white = M(0xf0efe9, 0.45);
-      const counter = M(0x2a2a2c, 0.35, 0.15);
-      const chrome = M(0xb0b0b8, 0.25, 0.85);
-      const plantGreen = M(0x2a5a28, 0.92);
-
-      // Living + kitchen (right)
-      addBox(2.2, 0.42, 0.85, fabric, 1.6, 0.22, 0.8);
-      addBox(2.2, 0.5, 0.16, fabric, 1.6, 0.68, 0.42);
-      addBox(0.18, 0.35, 0.7, fabric, 0.6, 0.55, 0.75);
-      addBox(0.18, 0.35, 0.7, fabric, 2.6, 0.55, 0.75);
-
-      addBox(1.0, 0.04, 0.55, wood, 1.6, 0.36, 1.9);
-      addBox(0.06, 0.32, 0.06, chrome, 1.2, 0.16, 1.7);
-      addBox(0.06, 0.32, 0.06, chrome, 2.0, 0.16, 1.7);
-      addBox(0.06, 0.32, 0.06, chrome, 1.2, 0.16, 2.1);
-      addBox(0.06, 0.32, 0.06, chrome, 2.0, 0.16, 2.1);
-
-      addBox(1.6, 0.45, 0.38, darkWood, 1.6, 0.23, 3.3);
-      addBox(1.3, 0.75, 0.05, M(0x111111, 0.25, 0.3), 1.6, 1.05, 3.38);
-
-      addBox(2.4, 0.88, 0.6, white, 3.3, 0.44, -0.8);
-      addBox(2.4, 0.035, 0.6, counter, 3.3, 0.9, -0.8);
-      addCyl(0.18, 0.18, 0.08, chrome, 3.8, 0.94, -0.8, 20);
-
-      addBox(1.3, 0.04, 0.8, wood, 3.0, 0.74, 1.5);
-      [[2.5, 1.2], [3.5, 1.2], [2.5, 1.8], [3.5, 1.8]].forEach(([x, z]) => {
-        addBox(0.05, 0.7, 0.05, wood, x, 0.35, z);
-      });
-      [[2.4, 1.0], [3.6, 1.0], [2.4, 2.0], [3.6, 2.0]].forEach(([x, z]) => {
-        addBox(0.4, 0.06, 0.4, fabric, x, 0.42, z);
-        addBox(0.4, 0.4, 0.05, fabric, x, 0.65, z - 0.18);
+      box(1.05, 0.04, 0.58, sofaX, 0.38, sofaZ + 1.15, oakLight, 0.015);
+      [[-0.42, -0.2], [0.42, -0.2], [-0.42, 0.2], [0.42, 0.2]].forEach(([dx, dz]) => {
+        cyl(0.028, 0.028, 0.34, sofaX + dx, 0.19, sofaZ + 1.15 + dz, chrome, 12);
       });
 
-      // Bedroom (top-left)
-      addBox(1.7, 0.32, 2.0, fabric, -2.6, 0.18, -3.4);
-      addBox(1.7, 0.12, 0.35, fabricLight, -2.6, 0.42, -4.2);
-      addBox(0.55, 0.1, 0.35, fabricLight, -3.1, 0.42, -3.6);
-      addBox(0.55, 0.1, 0.35, fabricLight, -2.1, 0.42, -3.6);
-      addBox(0.4, 0.42, 0.35, darkWood, -3.7, 0.22, -4.1);
-      addBox(0.4, 0.42, 0.35, darkWood, -1.5, 0.22, -4.1);
-      addBox(1.1, 2.1, 0.5, white, -0.3, 1.05, -4.3);
+      box(1.7, 0.42, 0.4, sofaX, 0.24, sofaZ + 2.35, oakDark, 0.02);
+      box(1.35, 0.78, 0.05, sofaX, 1.05, sofaZ + 2.48, black, 0.005);
 
-      // Bathroom (bottom-left)
-      addBox(0.7, 0.55, 0.45, white, -3.0, 0.28, 2.8);
-      addCyl(0.28, 0.28, 0.12, chrome, -3.0, 0.58, 2.8, 20);
-      addBox(0.7, 0.04, 0.45, counter, -3.0, 0.57, 2.8);
+      const rug = new THREE.Mesh(new THREE.PlaneGeometry(3.0, 2.2), rugCol);
+      rug.rotation.x = -Math.PI / 2;
+      rug.position.set(sofaX, 0.015, sofaZ + 0.9);
+      rug.receiveShadow = true;
+      g.add(rug);
+
+      // Kitchen
+      const kx = 3.35, kz = -0.5;
+      box(2.6, 0.86, 0.62, kx, 0.43, kz, offWhite, 0.015);
+      box(2.65, 0.04, 0.66, kx, 0.88, kz, stone, 0.008);
+      box(2.4, 0.7, 0.38, kx, 2.05, kz - 0.08, offWhite, 0.015);
+      cyl(0.16, 0.16, 0.06, kx + 0.55, 0.92, kz, chrome, 20);
+      cyl(0.018, 0.018, 0.28, kx + 0.55, 1.08, kz - 0.12, chrome, 10);
+      box(0.12, 0.02, 0.02, kx + 0.55, 1.22, kz - 0.05, chrome, 0.005);
+      for (const dx of [-0.9, -0.3, 0.3, 0.9]) {
+        box(0.08, 0.015, 0.015, kx + dx, 0.55, kz + 0.32, chrome, 0.003);
+      }
+
+      box(1.55, 0.05, 0.85, 2.9, 0.76, 1.55, oak, 0.015);
+      [[-0.6, -0.32], [0.6, -0.32], [-0.6, 0.32], [0.6, 0.32]].forEach(([dx, dz]) => {
+        cyl(0.035, 0.035, 0.72, 2.9 + dx, 0.38, 1.55 + dz, oakDark, 12);
+      });
+
+      function chair(x, z, rotY = 0) {
+        const cg = new THREE.Group();
+        const seat = new THREE.Mesh(new RoundedBoxGeometry(0.42, 0.06, 0.42, 2, 0.02), fabric);
+        seat.position.set(0, 0.46, 0); seat.castShadow = true; cg.add(seat);
+        const back = new THREE.Mesh(new RoundedBoxGeometry(0.42, 0.42, 0.05, 2, 0.02), fabric);
+        back.position.set(0, 0.7, -0.18); back.castShadow = true; cg.add(back);
+        [[-0.15, -0.15], [0.15, -0.15], [-0.15, 0.15], [0.15, 0.15]].forEach(([dx, dz]) => {
+          const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.44, 10), oakDark);
+          leg.position.set(dx, 0.22, dz); leg.castShadow = true; cg.add(leg);
+        });
+        cg.position.set(x, 0, z); cg.rotation.y = rotY; g.add(cg);
+      }
+      chair(2.35, 1.55, Math.PI / 2);
+      chair(3.45, 1.55, -Math.PI / 2);
+      chair(2.9, 1.05, 0);
+      chair(2.9, 2.05, Math.PI);
+
+      // Bedroom
+      const bx = -2.5, bz = -3.5;
+      box(1.75, 0.28, 2.05, bx, 0.22, bz, fabricGrey, 0.03);
+      box(1.75, 0.12, 2.05, bx, 0.42, bz, fabric, 0.02);
+      box(0.55, 0.12, 0.38, bx - 0.4, 0.52, bz - 0.75, fabric, 0.04);
+      box(0.55, 0.12, 0.38, bx + 0.4, 0.52, bz - 0.75, fabric, 0.04);
+      box(1.85, 0.85, 0.08, bx, 0.75, bz - 1.0, oak, 0.02);
+      box(0.42, 0.42, 0.38, bx - 1.15, 0.24, bz - 0.7, oakDark, 0.02);
+      box(0.42, 0.42, 0.38, bx + 1.15, 0.24, bz - 0.7, oakDark, 0.02);
+      cyl(0.08, 0.1, 0.08, bx - 1.15, 0.5, bz - 0.7, cream, 16);
+      cyl(0.025, 0.025, 0.25, bx - 1.15, 0.65, bz - 0.7, chrome, 10);
+      cyl(0.12, 0.14, 0.14, bx - 1.15, 0.85, bz - 0.7, cream, 16);
+      cyl(0.08, 0.1, 0.08, bx + 1.15, 0.5, bz - 0.7, cream, 16);
+      cyl(0.025, 0.025, 0.25, bx + 1.15, 0.65, bz - 0.7, chrome, 10);
+      cyl(0.12, 0.14, 0.14, bx + 1.15, 0.85, bz - 0.7, cream, 16);
+      box(1.15, 2.15, 0.55, -0.4, 1.1, -4.25, offWhite, 0.015);
+      box(0.02, 1.6, 0.02, -0.4, 1.1, -3.96, chrome, 0.003);
+
+      const rugB = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 1.6), M('#c8b8a0', 0.95));
+      rugB.rotation.x = -Math.PI / 2;
+      rugB.position.set(bx, 0.014, bz + 0.3);
+      rugB.receiveShadow = true;
+      g.add(rugB);
+
+      // Bathroom
+      const bathX = 2.9, bathZ = -4.0;
+      const bathFloor = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 2.0), stone);
+      bathFloor.rotation.x = -Math.PI / 2;
+      bathFloor.position.set(bathX, 0.013, bathZ);
+      bathFloor.receiveShadow = true;
+      g.add(bathFloor);
+      box(1.0, 0.05, 1.3, bathX + 1.15, 0.04, bathZ - 0.2, stone, 0.005);
+      box(0.02, 1.95, 1.25, bathX + 0.65, 1.05, bathZ - 0.2, glass, 0.001);
+      cyl(0.02, 0.02, 0.5, bathX + 1.4, 2.0, bathZ - 0.5, chrome, 10);
+      box(0.18, 0.02, 0.18, bathX + 1.4, 2.22, bathZ - 0.5, chrome, 0.01);
+      box(0.55, 0.55, 1.15, bathX - 1.4, 0.35, bathZ, oak, 0.02);
+      box(0.58, 0.04, 1.2, bathX - 1.4, 0.64, bathZ, stone, 0.008);
+      box(0.38, 0.12, 0.5, bathX - 1.4, 0.72, bathZ, offWhite, 0.03);
+      box(0.02, 0.7, 0.85, bathX - 1.72, 1.45, bathZ, chrome, 0.005);
+      box(0.38, 0.4, 0.55, bathX - 0.2, 0.22, bathZ - 0.55, offWhite, 0.04);
+      box(0.4, 0.08, 0.58, bathX - 0.2, 0.44, bathZ - 0.55, offWhite, 0.03);
+      box(0.42, 0.85, 0.16, bathX - 0.2, 0.9, bathZ - 0.85, stone, 0.01);
 
       // Technical
-      addBox(0.9, 1.6, 0.55, M(0x3a3a3e, 0.6), -3.2, 0.8, 0.2);
+      box(0.62, 0.85, 0.6, 3.3, 0.45, -2.45, offWhite, 0.015);
+      cyl(0.2, 0.2, 0.03, 3.3, 0.45, -2.14, black, 20);
+      box(0.62, 0.85, 0.6, 4.0, 0.45, -2.45, offWhite, 0.015);
+      cyl(0.2, 0.2, 0.03, 4.0, 0.45, -2.14, black, 20);
+      box(1.4, 0.04, 0.65, 3.65, 0.9, -2.45, oak, 0.01);
 
-      // Plant
-      addCyl(0.16, 0.14, 0.35, M(0x4a3728, 0.85), 3.6, 0.18, 3.0);
-      const foliage = new THREE.Mesh(new THREE.SphereGeometry(0.38, 10, 8), plantGreen);
-      foliage.position.set(3.6, 0.65, 3.0);
-      foliage.castShadow = true;
-      scene.add(foliage);
+      function pendant(x, z) {
+        cyl(0.01, 0.01, 0.45, x, 2.35, z, black, 8);
+        const shade = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.28, 0.2, 24, 1, true), M('#f5f0e8', 0.4));
+        shade.position.set(x, 2.05, z); shade.castShadow = true; g.add(shade);
+        const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.06, 12, 10), M('#fff8e8', 0.3, 0.0, { emissive: '#ffeedd', emissiveIntensity: 0.6 }));
+        bulb.position.set(x, 2.0, z); g.add(bulb);
+      }
+      pendant(-0.8, 0.3);
+      pendant(2.9, 1.1);
+      pendant(2.5, -3.7);
 
-      const rug = new THREE.Mesh(new THREE.PlaneGeometry(2.8, 2.0), M(0x5c4030, 0.95));
-      rug.rotation.x = -Math.PI / 2;
-      rug.position.set(1.6, 0.02, 1.4);
-      rug.receiveShadow = true;
-      scene.add(rug);
+      function plant(x, z, s = 0.65) {
+        cyl(s * 0.16, s * 0.2, s * 0.35, x, s * 0.18, z, cream, 16);
+        for (let i = 0; i < 8; i++) {
+          const a = i * 0.8;
+          const leaf = new THREE.Mesh(new THREE.SphereGeometry(1, 8, 6), fabricSage);
+          leaf.scale.set(s * 0.08, s * 0.32, s * 0.04);
+          leaf.position.set(x + Math.cos(a) * s * 0.15, s * 0.55, z + Math.sin(a) * s * 0.15);
+          leaf.rotation.set(Math.sin(a) * 0.4, a, Math.cos(a) * 0.3);
+          leaf.castShadow = true; g.add(leaf);
+        }
+      }
+      plant(-1.4, -4.0, 0.6);
+      plant(4.2, 2.4, 0.7);
+      plant(1.5, 2.6, 0.5);
+
+      for (const x of [-2.6, -0.2]) {
+        for (let i = 0; i < 7; i++) {
+          const c = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 2.3, 8), fabric);
+          c.position.set(x + i * 0.045, 1.3, 2.95);
+          c.scale.z = 0.55; c.castShadow = true; g.add(c);
+        }
+      }
+
+      for (const z of [0.15, 1.05]) {
+        box(0.04, 0.7, 0.5, 1.15, 1.65, z, oak, 0.008);
+        box(0.015, 0.58, 0.4, 1.12, 1.65, z, cream, 0.001);
+        box(0.02, 0.28, 0.2, 1.11, 1.65, z, fabricSage, 0.02);
+      }
+
+      box(0.35, 0.5, 0.9, 0.7, 0.28, -4.2, oak, 0.02);
+      box(0.03, 1.1, 0.65, 0.9, 1.4, -4.2, chrome, 0.005);
+
+      g.visible = false;
+      return g;
     }
 
-    document.addEventListener('keydown', (e) => {
-      if (e.code === 'KeyW') keys.w = true;
-      if (e.code === 'KeyA') keys.a = true;
-      if (e.code === 'KeyS') keys.s = true;
-      if (e.code === 'KeyD') keys.d = true;
-      if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') keys.shift = true;
-      if (e.code === 'Space') { keys.space = true; e.preventDefault(); }
-    });
-    document.addEventListener('keyup', (e) => {
-      if (e.code === 'KeyW') keys.w = false;
-      if (e.code === 'KeyA') keys.a = false;
-      if (e.code === 'KeyS') keys.s = false;
-      if (e.code === 'KeyD') keys.d = false;
-      if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') keys.shift = false;
-      if (e.code === 'Space') keys.space = false;
+    const MODEL_URLS = [
+      'model.glb',
+      'https://tobek-spacer-stan-faktyczny.thetobeq.chatgpt.site/model.glb'
+    ];
+
+    function loadModel(urls, idx = 0) {
+      if (idx >= urls.length) {
+        $('loading').innerHTML = '<div style="color:#f66">Nie udało się załadować modelu GLB.</div>';
+        return;
+      }
+      new GLTFLoader().load(
+        urls[idx],
+        (gltf) => {
+          modelRoot = gltf.scene;
+          modelRoot.traverse((o) => {
+            if (o.isLight) o.visible = false;
+            if (o.isMesh) {
+              o.castShadow = true;
+              o.receiveShadow = true;
+              const mats = Array.isArray(o.material) ? o.material : [o.material];
+              for (const m of mats) {
+                if (!m) continue;
+                if (m.map) {
+                  m.map.colorSpace = THREE.SRGBColorSpace;
+                  m.map.anisotropy = renderer.capabilities.getMaxAnisotropy();
+                }
+                m.side = THREE.FrontSide;
+                m.needsUpdate = true;
+              }
+              if (o.geometry) o.geometry.computeVertexNormals();
+            }
+          });
+          scene.add(modelRoot);
+          finishGroup = createFurniture();
+          scene.add(finishGroup);
+          $('progress').style.width = '100%';
+          setTimeout(() => { $('loading').style.display = 'none'; ready = true; }, 200);
+        },
+        (xhr) => {
+          if (xhr.total) $('progress').style.width = Math.min(97, (xhr.loaded / xhr.total) * 100) + '%';
+        },
+        () => loadModel(urls, idx + 1)
+      );
+    }
+    loadModel(MODEL_URLS);
+
+    function setMode(on) {
+      furnished = on;
+      if (finishGroup) finishGroup.visible = on;
+      lampPts.forEach((l, i) => { l.intensity = on ? (i === 1 ? 1.35 : 1.0) : 0.55; });
+      scene.environmentIntensity = on ? 0.55 : 0.35;
+      renderer.toneMappingExposure = on ? 1.12 : 1.02;
+      $('btnActual').classList.toggle('active', !on);
+      $('btnFinished').classList.toggle('active', on);
+      $('modeLabel').textContent = on
+        ? 'Wykończone · propozycja aranżacji'
+        : 'Stan faktyczny · bez umeblowania';
+      $('hint').textContent = on
+        ? 'Aranżacja inspirowana układem z filmu. Kliknij, aby wejść.'
+        : 'Oryginalny model – stan deweloperski. Kliknij, aby wejść.';
+    }
+    $('btnActual').onclick = () => setMode(false);
+    $('btnFinished').onclick = () => setMode(true);
+
+    let pointerLocked = false;
+    function setActive(v) {
+      active = v;
+      $('panel').style.display = v ? 'none' : 'block';
+      $('crosshair').style.display = v && !isMobile ? 'block' : 'none';
+      if (isMobile) {
+        $('joy').style.display = v ? 'block' : 'none';
+        $('look').style.display = v ? 'block' : 'none';
+      }
+      if (v && !isMobile) renderer.domElement.requestPointerLock?.();
+      else if (!v && document.pointerLockElement) document.exitPointerLock?.();
+    }
+
+    $('enter').onclick = () => {
+      if (!ready) return;
+      setActive(true);
+      if (isMobile && document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      }
+    };
+    $('reset').onclick = () => { resetCam(); keys.clear(); };
+
+    document.addEventListener('pointerlockchange', () => {
+      pointerLocked = document.pointerLockElement === renderer.domElement;
+      if (!pointerLocked && active && !isMobile) setActive(false);
     });
 
-    startBtn.addEventListener('click', () => {
-      if (isMobile) {
-        blocker.style.display = 'none';
-        document.getElementById('joystick-zone').style.display = 'block';
-        document.getElementById('look-zone').style.display = 'block';
-        if (document.documentElement.requestFullscreen) {
-          document.documentElement.requestFullscreen().catch(() => {});
-        }
-      } else {
-        controls.lock();
+    document.addEventListener('mousemove', (e) => {
+      if (!active) return;
+      if (!pointerLocked && !isMobile) return;
+      camera.rotation.y -= e.movementX * 0.002;
+      camera.rotation.x = THREE.MathUtils.clamp(camera.rotation.x - e.movementY * 0.002, -1.35, 1.35);
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'Escape') { setActive(false); return; }
+      if (active && ['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','ShiftLeft','ShiftRight'].includes(e.code)) {
+        e.preventDefault(); keys.add(e.code);
       }
     });
-    controls.addEventListener('lock', () => { blocker.style.display = 'none'; });
-    controls.addEventListener('unlock', () => { blocker.style.display = 'flex'; });
+    document.addEventListener('keyup', (e) => keys.delete(e.code));
+    window.addEventListener('blur', () => { keys.clear(); setActive(false); });
 
     let joyActive = false, joyVec = { x: 0, y: 0 };
-    const knob = document.getElementById('joystick-knob');
-    const joyZone = document.getElementById('joystick-zone');
-    const lookZone = document.getElementById('look-zone');
-
-    joyZone.addEventListener('touchstart', (e) => { e.preventDefault(); joyActive = true; }, { passive: false });
-    joyZone.addEventListener('touchmove', (e) => {
+    const knob = $('joy-knob');
+    const joyEl = $('joy');
+    joyEl.addEventListener('touchstart', (e) => { e.preventDefault(); joyActive = true; }, { passive: false });
+    joyEl.addEventListener('touchmove', (e) => {
       if (!joyActive) return;
       e.preventDefault();
       const t = e.touches[0];
-      const rect = joyZone.getBoundingClientRect();
-      let dx = t.clientX - rect.left - 55;
-      let dy = t.clientY - rect.top - 55;
-      const max = 36;
+      const rect = joyEl.getBoundingClientRect();
+      let dx = t.clientX - rect.left - 60;
+      let dy = t.clientY - rect.top - 60;
+      const max = 38;
       const len = Math.hypot(dx, dy) || 1;
       if (len > max) { dx = dx / len * max; dy = dy / len * max; }
       knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
-      joyVec.x = dx / max;
-      joyVec.y = -dy / max;
+      joyVec.x = dx / max; joyVec.y = -dy / max;
     }, { passive: false });
-    joyZone.addEventListener('touchend', () => {
+    joyEl.addEventListener('touchend', () => {
       joyActive = false; joyVec.x = joyVec.y = 0;
       knob.style.transform = 'translate(-50%, -50%)';
     });
 
     let lookPrev = null;
-    lookZone.addEventListener('touchstart', (e) => {
+    $('look').addEventListener('touchstart', (e) => {
       lookPrev = { x: e.touches[0].clientX, y: e.touches[0].clientY };
     }, { passive: true });
-    lookZone.addEventListener('touchmove', (e) => {
-      if (!lookPrev) return;
+    $('look').addEventListener('touchmove', (e) => {
+      if (!lookPrev || !active) return;
       const t = e.touches[0];
       const dx = t.clientX - lookPrev.x;
       const dy = t.clientY - lookPrev.y;
       lookPrev = { x: t.clientX, y: t.clientY };
-      const euler = new THREE.Euler(0, 0, 0, 'YXZ');
-      euler.setFromQuaternion(camera.quaternion);
-      euler.y -= dx * 0.0038;
-      euler.x -= dy * 0.0038;
-      euler.x = Math.max(-1.4, Math.min(1.4, euler.x));
-      camera.quaternion.setFromEuler(euler);
+      camera.rotation.y -= dx * 0.0035;
+      camera.rotation.x = THREE.MathUtils.clamp(camera.rotation.x - dy * 0.0035, -1.35, 1.35);
     }, { passive: true });
-    lookZone.addEventListener('touchend', () => { lookPrev = null; });
+    $('look').addEventListener('touchend', () => { lookPrev = null; });
 
-    let prevTime = performance.now();
+    const dir = new THREE.Vector3();
+    const right = new THREE.Vector3();
+    const move = new THREE.Vector3();
+
     function animate() {
       requestAnimationFrame(animate);
-      const time = performance.now();
-      const dt = Math.min(0.05, (time - prevTime) / 1000);
-      prevTime = time;
-
-      if (controls.isLocked || isMobile) {
-        velocity.x -= velocity.x * 9.0 * dt;
-        velocity.z -= velocity.z * 9.0 * dt;
-        velocity.y -= 22 * dt;
-
-        direction.z = Number(keys.w) - Number(keys.s);
-        direction.x = Number(keys.d) - Number(keys.a);
-        if (isMobile) {
-          direction.z += joyVec.y;
-          direction.x += joyVec.x;
+      const dt = Math.min(clock.getDelta(), 0.05);
+      if (ready && active) {
+        camera.getWorldDirection(dir);
+        dir.y = 0; dir.normalize();
+        right.crossVectors(dir, THREE.Object3D.DEFAULT_UP).normalize();
+        let f = Number(keys.has('KeyW') || keys.has('ArrowUp')) - Number(keys.has('KeyS') || keys.has('ArrowDown'));
+        let r = Number(keys.has('KeyD') || keys.has('ArrowRight')) - Number(keys.has('KeyA') || keys.has('ArrowLeft'));
+        if (isMobile) { f += joyVec.y; r += joyVec.x; }
+        move.set(0, 0, 0);
+        if (f || r) {
+          move.copy(dir).multiplyScalar(f).addScaledVector(right, r);
+          if (move.lengthSq() > 0) move.normalize();
+          const speed = (keys.has('ShiftLeft') || keys.has('ShiftRight') ? 4.2 : 2.4) * dt;
+          move.multiplyScalar(speed);
         }
-        direction.normalize();
-
-        const speed = keys.shift ? runSpeed : walkSpeed;
-        if (keys.w || keys.s || Math.abs(joyVec.y) > 0.04) velocity.z -= direction.z * speed * 14 * dt;
-        if (keys.a || keys.d || Math.abs(joyVec.x) > 0.04) velocity.x -= direction.x * speed * 14 * dt;
-
-        if (keys.space && canJump) {
-          velocity.y = 6.2;
-          canJump = false;
-        }
-
-        controls.moveRight(-velocity.x * dt);
-        controls.moveForward(-velocity.z * dt);
-        controls.getObject().position.y += velocity.y * dt;
-
-        if (controls.getObject().position.y < eyeHeight) {
-          velocity.y = 0;
-          controls.getObject().position.y = eyeHeight;
-          canJump = true;
-        }
-
-        const p = controls.getObject().position;
-        p.x = THREE.MathUtils.clamp(p.x, -4.3, 4.3);
-        p.z = THREE.MathUtils.clamp(p.z, -5.2, 5.2);
+        camera.position.x = THREE.MathUtils.clamp(camera.position.x + move.x, bounds.minX, bounds.maxX);
+        camera.position.z = THREE.MathUtils.clamp(camera.position.z + move.z, bounds.minZ, bounds.maxZ);
+        camera.position.y = 1.55;
       }
-
       renderer.render(scene, camera);
     }
     animate();
 
     window.addEventListener('resize', () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.aspect = innerWidth / innerHeight;
       camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setSize(innerWidth, innerHeight);
     });
-
     document.addEventListener('contextmenu', e => e.preventDefault());
-    document.body.addEventListener('touchmove', e => {
-      if (e.target.closest('#joystick-zone,#look-zone')) e.preventDefault();
-    }, { passive: false });
   </script>
 </body>
 </html>
