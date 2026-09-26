@@ -1,1 +1,30 @@
-PLACEHOLDER
+import * as T from 'three';
+import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
+export function createFinished(root){
+ const group=new T.Group();group.name='Wykończone';const colliders=new T.Group();const swaps=[];
+ const mat=(color,roughness=.65,extra={})=>new T.MeshStandardMaterial({color,roughness,...extra});
+ function texture(kind){const c=document.createElement('canvas');c.width=c.height=512;const x=c.getContext('2d');let seed=42;const rand=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296;};x.fillStyle=kind==='wood'?'#b99162':kind==='fabric'?'#e5ded0':'#d6cabc';x.fillRect(0,0,512,512);for(let i=0;i<4500;i++){let a=rand()*512,b=rand()*512;x.strokeStyle=kind==='wood'?`rgba(70,40,15,${rand()*.14})`:`rgba(80,65,45,${rand()*.06})`;x.lineWidth=rand()*1.5;x.beginPath();x.moveTo(a,b);x.lineTo(a+(kind==='wood'?rand()*150:rand()*7),b+rand()*2);x.stroke();}if(kind==='stone'){x.strokeStyle='#bcb0a2';x.lineWidth=1.4;x.strokeRect(0,0,512,512);}const t=new T.CanvasTexture(c);t.colorSpace=T.SRGBColorSpace;t.wrapS=t.wrapT=T.RepeatWrapping;t.repeat.set(kind==='wood'?2:4,kind==='wood'?2:4);return t;}
+ const oak=mat('#ffffff',.48,{map:texture('wood')}),cream=mat('#e5ddd0'),fabric=mat('#ffffff',.95,{map:texture('fabric')}),sage=mat('#879079',.98),black=mat('#242723',.38),stone=mat('#ffffff',.55,{map:texture('stone')}),white=mat('#f5f0e5',.25),metal=mat('#444744',.25,{metalness:.8}),glass=mat('#c5d3cf',.1,{transparent:true,opacity:.2,depthWrite:false}),rug=mat('#c6b9a6',1);
+ function box(w,h,d,x,y,z,m=oak,r=.025,parent=group){const o=new T.Mesh(r?new RoundedBoxGeometry(w,h,d,2,Math.min(r,w/3,h/3,d/3)):new T.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.castShadow=o.receiveShadow=true;parent.add(o);return o;}
+ function cyl(rad,h,x,y,z,m=oak,rt=rad,parent=group){const o=new T.Mesh(new T.CylinderGeometry(rt,rad,h,32),m);o.position.set(x,y,z);o.castShadow=o.receiveShadow=true;parent.add(o);return o;}
+ function solid(w,h,d,x,y,z){box(w,h,d,x,y,z,black,0,colliders);}
+ function leg(x,z,h=.7){cyl(.025,h,x,h/2,z,black);}
+ function plant(x,z,size=.7){cyl(size*.18,size*.4,x,size*.2,z,cream,size*.22);for(let i=0;i<9;i++){let a=i*2.4;const mesh=new T.Mesh(new T.SphereGeometry(1,10,8),sage);mesh.scale.set(size*.085,size*.35,size*.04);mesh.position.set(x+Math.cos(a)*size*.17,size*.55+(i%3)*size*.12,z+Math.sin(a)*size*.17);mesh.rotation.set(Math.sin(a)*.45,a,Math.cos(a)*.45);group.add(mesh);}}
+ function chair(x,z,rot=0){const g=new T.Group();g.position.set(x,0,z);g.rotation.y=rot;group.add(g);box(.49,.12,.48,0,.47,0,fabric,.06,g);box(.49,.44,.09,0,.72,.23,fabric,.045,g);for(const a of [-.18,.18])for(const b of [-.17,.17]){const l=box(.032,.43,.032,a,.215,b,oak,.01,g);l.rotation.z=a*.2;}solid(.52,.85,.52,x,.425,z);}
+ function lamp(x,z,y=2.25){cyl(.23,.25,x,y,z,cream,.13);cyl(.008,2.65-y,x,(2.65+y)/2,z,black);const l=new T.PointLight('#ffe2b4',5,3,2);l.position.set(x,y-.17,z);group.add(l);}
+ root.traverse(o=>{if(!o.isMesh)return;const list=Array.isArray(o.material)?o.material:[o.material];const next=list.map(m=>{if(/Screed_Floor/i.test(m.name))return stone;if(/Plaster_Walls|Plaster_Ceiling|Beam/i.test(m.name)){const c=m.clone();c.color.set('#ede7dd');return c;}return m;});if(next.some((m,i)=>m!==list[i]))swaps.push([o,o.material,Array.isArray(o.material)?next:next[0]]);});
+ box(3.6,.015,2.5,-1.65,.02,.55,rug,.01);box(.87,.27,2.85,-.05,.26,.25,oak,.06);box(.82,.24,2.8,-.09,.48,.25,fabric,.10);box(.22,.73,2.85,.28,.68,.25,fabric,.09);for(const z of [-1.13,1.63])box(.91,.51,.18,-.08,.54,z,fabric,.07);for(const z of [-.67,.24,1.12]){box(.6,.2,.82,-.14,.57,z,fabric,.08);const p=box(.2,.43,.53,.06,.86,z,z===.24?sage:fabric,.075);p.rotation.z=.15;}solid(1.02,1.1,3.05,-.03,.55,.25);
+ cyl(.5,.055,-1.6,.4,.25,oak);for(const a of [0,2.1,4.2])leg(-1.6+Math.cos(a)*.35,.25+Math.sin(a)*.35,.38);
+ box(1.25,.04,.55,-1.6,.72,1.55,oak,.02);for(const x of [-2.05,-1.15])for(const z of [1.3,1.8])leg(x,z,.68);
+ box(1.8,.04,.5,3,.74,.69,sage,.02);for(const x of [2.54,3.46]){box(.71,.17,.46,x,.72,2.3,fabric,.08);box(.42,.42,.39,x+(x<3?-.78:.78),.25,2.54,oak);cyl(.1,.18,x+(x<3?-.78:.78),.59,2.54,cream,.13);}solid(1.91,1.1,2.3,3,.55,1.66);
+ box(.55,2.42,1.6,4.39,1.21,.23,cream);for(const z of [-.34,.19,.72])box(.018,.45,.018,4.1,1.2,z,metal,.005);solid(.61,2.42,1.64,4.39,1.21,.23);
+ box(3.6,.02,2.08,2.86,.025,-3.94,stone,.001);box(.95,.055,1.25,4.12,.07,-4.24,white);box(.02,1.95,1.22,3.62,1.05,-4.24,glass,.001);box(.025,2.04,.025,3.61,1.04,-3.63,black,.001);cyl(.022,1.22,4.53,1.48,-4.3,black);box(.27,.025,.24,4.4,2.1,-4.3,black,.04);solid(.98,.16,1.3,4.12,.08,-4.24);
+ box(.48,.5,1.12,1.36,.64,-4.12,oak);box(.53,.065,1.19,1.36,.91,-4.12,stone);box(.4,.14,.59,1.36,1.02,-4.12,white,.08);box(.016,.82,.95,1.082,1.63,-4.12,mat('#bfd2cd',.12,{metalness:.8}),.02);solid(.61,1.05,1.24,1.36,.525,-4.12);
+ box(.40,.42,.58,2.57,.27,-4.58,white,.15);box(.43,.04,.61,2.57,.50,-4.58,white,.15);box(.52,1.1,.18,2.57,.55,-4.91,stone);solid(.56,1.1,.8,2.57,.55,-4.52);
+ for(const x of [3.23,3.86]){box(.58,.84,.57,x,.44,-2.48,white);const front=cyl(.205,.025,x,.43,-2.174,black);front.rotation.x=Math.PI/2;const drum=cyl(.15,.03,x,.43,-2.151,metal);drum.rotation.x=Math.PI/2;box(.42,.1,.02,x,.75,-2.18,cream);solid(.6,.89,.61,x,.445,-2.48);}box(1.35,.035,.64,3.56,.9,-2.48,oak);cyl(.26,1.5,4.36,.77,-2.43,white);solid(.55,1.54,.55,4.36,.77,-2.43);for(const y of [1.4,1.9])box(1.4,.045,.30,3.61,y,-2.63,oak);
+ for(const x of [-2.72,-.34])for(let i=0;i<8;i++){const curtain=cyl(.042,2.4,x+i*.043,1.35,3.0,fabric);curtain.scale.z=.6;}
+ for(const z of [.1,1.0]){box(.035,.72,.53,1.17,1.7,z,oak,.008);box(.01,.64,.45,1.147,1.7,z,cream,.001);const art=box(.014,.32,.22,1.135,1.69,z,sage,.05);art.rotation.x=.3;}
+ box(.30,.48,.85,.69,.25,-4.34,oak);solid(.35,.51,.9,.69,.255,-4.34);box(.03,1.15,.69,.86,1.48,-4.34,mat('#bbc6c0',.15,{metalness:.7}));plant(-1.35,-4.13,.65);plant(-3.94,2.55,.8);plant(1.68,2.67,.55);plant(4.35,-3.17,.5);
+ lamp(-1,.2);lamp(3,1.1);lamp(2.5,-3.85);lamp(.05,-3.85);
+ group.visible=false;return {group,colliders,swaps,set(on){group.visible=on;for(const [o,a,b]of swaps)o.material=on?b:a;}};
+}
